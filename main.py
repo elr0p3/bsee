@@ -56,7 +56,7 @@ class Verifier:
         self.false_negative = 0 # doesn't detect ID
 
     def match_ids(self, human_id: str, babel_id: str) -> bool:
-        if human_id == babel_id:
+        if human_id in babel_id:
             self.true_positive += 1
             return True
         elif babel_id == '':
@@ -67,28 +67,43 @@ class Verifier:
         return False
 
     def calculate_precision(self) -> float:
-        precision = self.true_positive / (self.true_positive + self.false_positive)
+        precision = .0
+        try:
+            precision = self.true_positive / (self.true_positive + self.false_positive)
+        except ZeroDivisionError:
+            pass
         return round(precision, 2)
 
     def calculate_recall(self) -> float:
-        recall = self.true_positive / (self.true_positive + self.false_negative)
+        recall = .0
+        try:
+            recall = self.true_positive / (self.true_positive + self.false_negative)
+        except ZeroDivisionError:
+            pass
         return round(recall, 2)
 
     def calculate_f_score(self) -> float:
         precision = self.calculate_precision()
         recall = self.calculate_recall()
-        f_score = 2 * ( (precision * recall) / (precision + recall) )
+
+        f_score = .0
+        try:
+            f_score = 2 * ( (precision * recall) / (precision + recall) )
+        except ZeroDivisionError:
+            pass
         return round(f_score, 2)
 
     def __str__(self):
         precision = self.calculate_precision()
         recall = self.calculate_recall()
         f_score = self.calculate_f_score()
-        return f'TOTAL      : {self.total}\n' \
-               f'SUCCESS    : {self.true_positive}\n' \
-               f'PRECISION  : {precision}\n' \
-               f'RECALL     : {recall}\n' \
-               f'F-SCORE    : {f_score}'
+        return f'TOTAL     : {self.total}\n' \
+               f'TRU. POS. : {self.true_positive}\n' \
+               f'FAL. POS. : {self.false_positive}\n' \
+               f'FAL. NEG. : {self.false_negative}\n' \
+               f'PRECISION : {precision}\n' \
+               f'RECALL    : {recall}\n' \
+               f'F-SCORE   : {f_score}'
 
 
 if __name__ == '__main__':
@@ -106,7 +121,7 @@ if __name__ == '__main__':
     df_result = pd.DataFrame(columns=['phrases', 'word', 'ID', 'definition', 'result_ID', 'result_definition'])
     # df_result = pd.DataFrame()
 
-    print('SUCCESS:')
+    # print('SUCCESS:')
     for i, row in df.iterrows():
         response_json = babelfynet.disambiguate(
             str(row['phrases']),
@@ -121,6 +136,8 @@ if __name__ == '__main__':
             str(row['ID']),
             babel_id
         )
+        if matches:
+            print('Match on line:', i)
 
         definition = babelfynet.download_definition_from_synsetid(str(row['ID']), str(row['language']))
         result_definition = babelfynet.download_definition_from_synsetid(babel_id, str(row['language']))
